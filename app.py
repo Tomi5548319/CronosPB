@@ -225,10 +225,14 @@ def staked_snapshot():
            "</body>"
 
 
-@app.route('/wallet_checker/{wallet_address}', methods=['GET'])
+@app.route('/wallet_checker/<string:wallet_address>/', methods=['GET'])
 def wallet_checker(wallet_address):
     return "Wallet: " + wallet_address + " (TBD)"
 
+
+@app.route('/save_snapshot/', methods=['GET'])
+def wallet_checker(wallet_address):
+    return "TBD"
 
 
 if __name__ == '__main__':
