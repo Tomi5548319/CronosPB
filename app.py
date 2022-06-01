@@ -238,13 +238,13 @@ def save_snapshot(password, date, time, cmb_staked, cgb_staked):
     local_pass = dotenv_values("/home/access.env")["pass"]
 
     if local_pass == password:
-        f = open("/home/snapshots/staking.txt", "a")
-        f2 = open("/home/snapshots/staking_last.txt", "w")
-        f.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
-        f2.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
-        f.close()
-        f2.close()
-        return "Snapshot saved"
+        #f = open("/home/snapshots/staking.txt", "a")
+        #f2 = open("/home/snapshots/staking_last.txt", "w")
+        #f.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+        #f2.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+        #f.close()
+        #f2.close()
+        return "Snapshot saved" + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n"
 
     return "Incorrect password"
 
