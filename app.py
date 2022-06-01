@@ -231,7 +231,7 @@ def wallet_checker(wallet_address):
 
 
 @app.route('/save_snapshot/', methods=['GET'])
-def wallet_checker(wallet_address):
+def save_snapshot():
     return "TBD"
 
 
