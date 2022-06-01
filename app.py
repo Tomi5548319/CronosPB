@@ -232,14 +232,14 @@ def wallet_checker(wallet_address):
     return "Wallet: " + wallet_address + " (TBD)"
 
 
-@app.route('/save_snapshot/<string:password>/<string:timestamp>/<string:cmb_staked>/<string:cgb_staked>/',
+@app.route('/save_snapshot/<string:password>/<string:date>/<string:time>/<string:cmb_staked>/<string:cgb_staked>/',
            methods=['GET'])
-def save_snapshot(password, timestamp, cmb_staked, cgb_staked):
+def save_snapshot(password, date, time, cmb_staked, cgb_staked):
     local_pass = dotenv_values("/home/access.env")["pass"]
 
     if local_pass == password:
         f = open("/home/snapshots/staking.txt", "a")
-        f.write(timestamp + "," + cmb_staked + "," + cgb_staked + "\n")
+        f.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
         f.close()
         return "Snapshot saved"
 
