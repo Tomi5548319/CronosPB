@@ -239,8 +239,11 @@ def save_snapshot(password, date, time, cmb_staked, cgb_staked):
 
     if local_pass == password:
         f = open("/home/snapshots/staking.txt", "a")
+        f2 = open("/home/snapshots/staking_last.txt", "w")
         f.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+        f2.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
         f.close()
+        f2.close()
         return "Snapshot saved"
 
     return "Incorrect password"
