@@ -27,7 +27,8 @@ def index():
         "window.location.href = window.location.href + extension" \
     "}" \
 "</script>" \
-"<button onclick=\"changeURL('staked_cpb_snapshot/');\">Staked CPB Snapshot</button><br><br>"
+"<button onclick=\"changeURL('staked_cpb_snapshot/');\">Staked CPB Snapshot</button><br><br>" \
+"<button onclick=\"changeURL('wallet_checker/0xF8E5a3916019BCdb8f598BBB5C9fDB9A81349C3f/');\">Wallet checker</button><br><br>"
 
 
 #def get_linux_conn():
@@ -55,7 +56,7 @@ def index():
 
 
 @app.route('/staked_cpb_snapshot/', methods=['GET'])
-def v1_health():
+def staked_snapshot():
 #    kurzor = connect_to_database()
 #    kurzor.execute("SELECT VERSION();")
 #    response_version = kurzor.fetchone()[0]
@@ -223,6 +224,10 @@ def v1_health():
            "</script>\n"\
            "</body>"
 
+
+@app.route('/wallet_checker/{wallet_address}', methods=['GET'])
+def wallet_checker(wallet_address):
+    return "Wallet: " + wallet_address + " (TBD)"
 
 
 
