@@ -256,6 +256,8 @@ def get_file_route(file: str) -> str:
         path += 'home/snapshots'
     elif file == 'all_cpb.json':
         path += 'home/holders'
+    elif file == 'logs.txt':
+        path += 'home/logs'
     else:
         path += 'home'
         file = 'err.txt'
@@ -271,22 +273,18 @@ def get_file_route(file: str) -> str:
     return 'err2.txt'
 
 
-logs = []
-
-
-def debug_return(html: str):
-    global logs
-    ret = '---Logs---<br>'
-    for log in logs:
-        ret += '|Log| ' + log + '<br>'
-    logs = []
-    return ret + '<br>' + html
+def log(log_text: str):
+    f = open(get_file_route('logs.txt'), "a")
+    f.write(str(datetime.now()) + '|' + log_text + '\n')
+    f.close()
 
 
 @app.route('/save_snapshot/<string:password>/<string:date>/<string:time>/<string:cmb_staked>/<string:cgb_staked>/',
            methods=['GET'])
 def save_snapshot(password, date, time, cmb_staked, cgb_staked):
-    global logs, snapshot_at
+    global snapshot_at
+
+    log('/save_snapshot/' + password + '/' + date + '/' + time + '/' + cmb_staked + '/' + cgb_staked + '/')
 
     if access_granted(password):
         save_snapshot = False
@@ -316,25 +314,24 @@ def save_snapshot(password, date, time, cmb_staked, cgb_staked):
         f.close()
 
         if save_snapshot:
-            logs.append('Save snapshot')
             f = open(get_file_route('staking.txt'), "a")
             f.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
             f.close()
             f2 = open(get_file_route('staking_last.txt'), "w")
             f2.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
             f2.close()
-            return debug_return("Snapshot saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+            return "Snapshot saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n"
         else:
-            logs.append("Don't save snapshot")
-            return debug_return(
-                "Snapshot not saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+            return "Snapshot not saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n"
 
-    return debug_return("Incorrect password")
+    return "Incorrect password"
 
 
 @app.route('/update_holder/<string:password>/<string:collection>/<string:id>/<string:wallet>/',
            methods=['GET'])
 def update_holder(password, collection, id, wallet):
+    log('/update_holder/' + password + '/' + collection + '/' + id + '/' + wallet + '/')
+
     try:
         int(id)
     except Exception:
@@ -360,14 +357,12 @@ def update_holder(password, collection, id, wallet):
                     }
                 }
 
-            logs.append('Actual version: ' + json.dumps(holders))
-
             # Save
             with open(get_file_route('all_cpb.json'), 'w') as outfile:
                 outfile.write(json.dumps(holders))
 
-        return debug_return("updating")
-    return debug_return("Incorrect password")
+        return "updating"
+    return "Incorrect password"
 
 
 if __name__ == '__main__':
