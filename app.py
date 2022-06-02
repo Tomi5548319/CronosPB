@@ -1,10 +1,9 @@
 # Azure web API
 from datetime import datetime
 from datetime import timedelta
+import json
 
 from flask import Flask, render_template, request, redirect, url_for
-
-app = Flask(__name__)
 
 import psycopg2 as psi
 import json
@@ -12,7 +11,10 @@ import os
 import platform
 from dotenv import dotenv_values
 
+app = Flask(__name__)
+
 snapshot_at = timedelta(hours=20, minutes=28)
+
 
 @app.route('/')
 def index():
@@ -252,6 +254,8 @@ def get_file_route(file: str) -> str:
 
     if file == 'staking.txt' or file == 'staking_last.txt':
         path += 'home/snapshots'
+    elif file == 'all_cpb.json':
+        path += 'home/holders'
     else:
         path += 'home'
         file = 'err.txt'
@@ -290,22 +294,22 @@ def save_snapshot(password, date, time, cmb_staked, cgb_staked):
         f = open(get_file_route('staking_last.txt'), "r")
         last_snap = f.readline()
         if last_snap == '':
-            #logs.append('No snapshot made before')
+            # logs.append('No snapshot made before')
             save_snapshot = True
         else:
-            #logs.append('Last snapshot: ' + last_snap)
+            # logs.append('Last snapshot: ' + last_snap)
 
             last_timestamp_obj = datetime.strptime(last_snap.split(',')[0], '%Y-%m-%d %H:%M:%S')
-            #logs.append('Last snapshot timestamp:|' + str(last_timestamp_obj) + '|')
+            # logs.append('Last snapshot timestamp:|' + str(last_timestamp_obj) + '|')
 
             last_timestamp_reduced = last_timestamp_obj - snapshot_at
-            #logs.append('Last snapshot timestamp reduced:|' + str(last_timestamp_reduced) + '|')
+            # logs.append('Last snapshot timestamp reduced:|' + str(last_timestamp_reduced) + '|')
 
             last_snapshot_date = last_timestamp_reduced.date()
-            #logs.append('Last snapshot date:|' + str(last_snapshot_date) + '|')
+            # logs.append('Last snapshot date:|' + str(last_snapshot_date) + '|')
 
             new_snapshot_date = (datetime.strptime(date + ' ' + time, '%Y-%m-%d %H:%M:%S') - snapshot_at).date()
-            #logs.append('New snapshot date:|' + str(new_snapshot_date) + '|')
+            # logs.append('New snapshot date:|' + str(new_snapshot_date) + '|')
 
             save_snapshot = new_snapshot_date > last_snapshot_date
 
@@ -322,7 +326,8 @@ def save_snapshot(password, date, time, cmb_staked, cgb_staked):
             return debug_return("Snapshot saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
         else:
             logs.append("Don't save snapshot")
-            return debug_return("Snapshot not saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+            return debug_return(
+                "Snapshot not saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
 
     return debug_return("Incorrect password")
 
@@ -330,7 +335,37 @@ def save_snapshot(password, date, time, cmb_staked, cgb_staked):
 @app.route('/update_holder/<string:password>/<string:collection>/<string:id>/<string:wallet>/',
            methods=['GET'])
 def update_holder(password, collection, id, wallet):
+    try:
+        int(id)
+    except Exception:
+        return debug_return("ID is not an integer")
+
     if access_granted(password):
+        with open(get_file_route('all_cpb.json')) as json_file:
+            holders = {}
+            try:
+                holders = json.load(json_file)
+                if collection in holders:
+                    holders[collection][id] = wallet
+                else:
+                    holders[collection] = {
+                        int(id): wallet
+                    }
+
+
+            except Exception:
+                holders = {
+                    collection: {
+                        int(id): wallet
+                    }
+                }
+
+            logs.append('Actual version: ' + json.dumps(holders))
+
+            # Save
+            with open(get_file_route('all_cpb.json'), 'w') as outfile:
+                outfile.write(json.dumps(holders))
+
         return debug_return("updating")
     return debug_return("Incorrect password")
 
