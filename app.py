@@ -1,4 +1,7 @@
+# Azure web API
 from datetime import datetime
+from datetime import timedelta
+
 from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
@@ -9,6 +12,7 @@ import os
 import platform
 from dotenv import dotenv_values
 
+snapshot_at = timedelta(hours=20, minutes=28)
 
 @app.route('/')
 def index():
@@ -219,7 +223,8 @@ def staked_snapshot():
            "	  incrementCGB('0x'.concat(data['result'].substring(26)), parseInt(token_id, 16));\n" \
            "	})\n" \
            "	.catch((error) => {\n" \
-           "	  console.error('Error occured while fetching CGB #'.concat(parseInt(token_id, 16), ' (Trying again in 5 seconds...):'), error);\n" \
+           "	  console.error('Error occured while fetching CGB #'.concat(parseInt(token_id, 16)," \
+           " ' (Trying again in 5 seconds...):'), error);\n" \
            "	  setTimeout(getHolderCGB, 5000, token_id);\n" \
            "	});\n" \
            "}\n" \
@@ -232,21 +237,102 @@ def wallet_checker(wallet_address):
     return "Wallet: " + wallet_address + " (TBD)"
 
 
+def access_granted(password: str) -> bool:
+    local_pass = None
+    if platform.system() == "Linux":
+        local_pass = dotenv_values("/home/access.env")["pass"]
+    else:
+        local_pass = os.getenv("cpb_pass")
+
+    return local_pass == password
+
+
+def get_file_route(file: str) -> str:
+    path = '/' if platform.system() == "Linux" else ''
+
+    if file == 'staking.txt' or file == 'staking_last.txt':
+        path += 'home/snapshots'
+    else:
+        path += 'home'
+        file = 'err.txt'
+
+    if path is not None:
+        if not os.path.exists(path):
+            os.makedirs(path)
+        file_route = path + '/' + file
+
+        f = open(file_route, "a")
+        f.close()
+        return file_route
+    return 'err2.txt'
+
+
+logs = []
+
+
+def debug_return(html: str):
+    global logs
+    ret = '---Logs---<br>'
+    for log in logs:
+        ret += '|Log| ' + log + '<br>'
+    logs = []
+    return ret + '<br>' + html
+
+
 @app.route('/save_snapshot/<string:password>/<string:date>/<string:time>/<string:cmb_staked>/<string:cgb_staked>/',
            methods=['GET'])
 def save_snapshot(password, date, time, cmb_staked, cgb_staked):
-    local_pass = dotenv_values("/home/access.env")["pass"]
+    global logs, snapshot_at
 
-    if local_pass == password:
-        #f = open("/home/snapshots/staking.txt", "a")
-        #f2 = open("/home/snapshots/staking_last.txt", "w")
-        #f.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
-        #f2.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
-        #f.close()
-        #f2.close()
-        return "Snapshot saved" + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n"
+    if access_granted(password):
+        save_snapshot = False
 
-    return "Incorrect password"
+        f = open(get_file_route('staking_last.txt'), "r")
+        last_snap = f.readline()
+        if last_snap == '':
+            #logs.append('No snapshot made before')
+            save_snapshot = True
+        else:
+            #logs.append('Last snapshot: ' + last_snap)
+
+            last_timestamp_obj = datetime.strptime(last_snap.split(',')[0], '%Y-%m-%d %H:%M:%S')
+            #logs.append('Last snapshot timestamp:|' + str(last_timestamp_obj) + '|')
+
+            last_timestamp_reduced = last_timestamp_obj - snapshot_at
+            #logs.append('Last snapshot timestamp reduced:|' + str(last_timestamp_reduced) + '|')
+
+            last_snapshot_date = last_timestamp_reduced.date()
+            #logs.append('Last snapshot date:|' + str(last_snapshot_date) + '|')
+
+            new_snapshot_date = (datetime.strptime(date + ' ' + time, '%Y-%m-%d %H:%M:%S') - snapshot_at).date()
+            #logs.append('New snapshot date:|' + str(new_snapshot_date) + '|')
+
+            save_snapshot = new_snapshot_date > last_snapshot_date
+
+        f.close()
+
+        if save_snapshot:
+            logs.append('Save snapshot')
+            f = open(get_file_route('staking.txt'), "a")
+            f.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+            f.close()
+            f2 = open(get_file_route('staking_last.txt'), "w")
+            f2.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+            f2.close()
+            return debug_return("Snapshot saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+        else:
+            logs.append("Don't save snapshot")
+            return debug_return("Snapshot not saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+
+    return debug_return("Incorrect password")
+
+
+@app.route('/update_holder/<string:password>/<string:collection>/<string:id>/<string:wallet>/',
+           methods=['GET'])
+def update_holder(password, collection, id, wallet):
+    if access_granted(password):
+        return debug_return("updating")
+    return debug_return("Incorrect password")
 
 
 if __name__ == '__main__':
