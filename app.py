@@ -1,4 +1,5 @@
 # Azure web API
+from urllib.request import urlopen
 from datetime import datetime
 from datetime import timedelta
 import json
@@ -275,7 +276,7 @@ def get_file_route(file: str) -> str:
 
 def log(log_text: str):
     f = open(get_file_route('logs.txt'), "a")
-    f.write(str(datetime.now()) + '|' + log_text + '\n')
+    f.write(str(datetime.strptime(urlopen('http://just-the-time.appspot.com/').read().strip().decode('utf-8'), '%Y-%m-%d %H:%M:%S')) + '|' + log_text + '\n')
     f.close()
 
 
