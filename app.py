@@ -280,6 +280,63 @@ def log(log_text: str):
     f.close()
 
 
+@app.route('/save_staked_snapshot/', methods=['POST'])
+def save_staked_snapshot():
+    global snapshot_at
+
+    try:
+        data = request.get_json()
+        password = data['password']
+        date = data['date']
+        time = data['time']
+        cmb_staked = data['cmb_staked']
+        cgb_staked = data['cgb_staked']
+
+        log('/save_staked_snapshot/' + password + '/' + date + '/' + time + '/' + cmb_staked + '/' + cgb_staked + '/')
+
+        if access_granted(password):
+            save_snapshot = False
+
+            f = open(get_file_route('staking_last.txt'), "r")
+            last_snap = f.readline()
+            if last_snap == '':
+                # logs.append('No snapshot made before')
+                save_snapshot = True
+            else:
+                # logs.append('Last snapshot: ' + last_snap)
+
+                last_timestamp_obj = datetime.strptime(last_snap.split(',')[0], '%Y-%m-%d %H:%M:%S')
+                # logs.append('Last snapshot timestamp:|' + str(last_timestamp_obj) + '|')
+
+                last_timestamp_reduced = last_timestamp_obj - snapshot_at
+                # logs.append('Last snapshot timestamp reduced:|' + str(last_timestamp_reduced) + '|')
+
+                last_snapshot_date = last_timestamp_reduced.date()
+                # logs.append('Last snapshot date:|' + str(last_snapshot_date) + '|')
+
+                new_snapshot_date = (datetime.strptime(date + ' ' + time, '%Y-%m-%d %H:%M:%S') - snapshot_at).date()
+                # logs.append('New snapshot date:|' + str(new_snapshot_date) + '|')
+
+                save_snapshot = new_snapshot_date > last_snapshot_date
+
+            f.close()
+
+            if save_snapshot:
+                f = open(get_file_route('staking.txt'), "a")
+                f.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+                f.close()
+                f2 = open(get_file_route('staking_last.txt'), "w")
+                f2.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+                f2.close()
+                return "Snapshot saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n"
+            else:
+                return "Snapshot not saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n"
+
+        return "Incorrect password"
+    except Exception as e:
+        return 'Error occured: ' + str(e)
+
+
 @app.route('/save_snapshot/<string:password>/<string:date>/<string:time>/<string:cmb_staked>/<string:cgb_staked>/',
            methods=['GET'])
 def save_snapshot(password, date, time, cmb_staked, cgb_staked):
