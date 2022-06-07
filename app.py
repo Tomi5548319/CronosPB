@@ -203,6 +203,20 @@ def staked_snapshot():
            "</body>"
 
 
+@app.route('/wallet_checker/', methods=['GET'])
+def wallet_check():
+    return css + '<label for="wallet_address">Wallet address:</label>' \
+        '<input id="wallet_address" size="45"><br><br>' \
+        '<button onclick="check_wallet();">Check wallet</button><br>' \
+        '' \
+        '<script>' \
+        '	function check_wallet(){' \
+        '	var wallet_address = document.getElementById(\'wallet_address\').value;' \
+        '	window.location.href = window.location.href + wallet_address + \'/\';' \
+        '	}' \
+        '</script>'
+
+
 @app.route('/wallet_checker/<string:wallet_address>/', methods=['GET'])
 def wallet_checker(wallet_address: str):
     try:
@@ -213,7 +227,7 @@ def wallet_checker(wallet_address: str):
 
                 for collection in holders:
                     for nft_id in holders[collection]:
-                        if holders[collection][nft_id]['owner'] == wallet_address and collection in counts:
+                        if str(holders[collection][nft_id]['owner']).lower() == str(wallet_address).lower() and collection in counts:
                             counts[collection] += 1
 
                 return "Wallet: " + str(wallet_address) + '<br>' + \
