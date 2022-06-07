@@ -203,11 +203,6 @@ def staked_snapshot():
            "</body>"
 
 
-@app.route('/wallet_checker/', methods=['GET'])
-def wallet_check():
-
-
-
 @app.route('/wallet_checker/<string:wallet_address>/', methods=['GET'])
 def wallet_checker(wallet_address: str):
     try:
