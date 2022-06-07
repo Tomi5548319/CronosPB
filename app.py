@@ -362,7 +362,7 @@ def update_holders():
                     if collection not in holders:
                         holders[collection] = {}
 
-                    for nft_id in new_holders:
+                    for nft_id in new_holders[collection]:
                         if 'owner' in new_holders[collection][nft_id] and 'staked' in new_holders[collection][nft_id]:
                             holders[collection][nft_id] = new_holders[collection][nft_id]
 
