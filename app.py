@@ -1,4 +1,6 @@
-# Azure web API
+# Azure web API for CPB
+# Made by maCRO Tomi
+
 from urllib.request import urlopen
 from datetime import datetime
 from datetime import timedelta
