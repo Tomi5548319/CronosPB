@@ -16,10 +16,7 @@ app = Flask(__name__)
 
 snapshot_at = timedelta(hours=20, minutes=28)
 
-
-@app.route('/')
-def index():
-    return "<style>" \
+css = "<style>" \
            "button {" \
            "background-color: #66B1FF;" \
            "border: none;" \
@@ -30,38 +27,18 @@ def index():
            "display: inline-block;" \
            "font-size: 16px;" \
            "}" \
-           "</style>" \
-           "<script>" \
+           "</style>"
+
+
+@app.route('/')
+def index():
+    return css + "<script>" \
            "function changeURL(extension) {" \
            "window.location.href = window.location.href + extension" \
            "}" \
            "</script>" \
            "<button onclick=\"changeURL('staked_cpb_snapshot/');\">Staked CPB Snapshot</button><br><br>" \
            "<button onclick=\"changeURL('wallet_checker/0xF8E5a3916019BCdb8f598BBB5C9fDB9A81349C3f/');\">Wallet checker</button><br><br>"
-
-
-# def get_linux_conn():
-#    auth = dotenv_values("/home/en_var.env")
-#
-#    return psi.connect(
-#        host="147.175.150.216",
-#        database="dota2",
-#        user=auth["DBUSER"],
-#        password=auth["DBPASS"])
-#
-#
-# def get_windows_conn():
-#    return psi.connect(
-#        host="147.175.150.216",
-#        database="dota2",
-#        user=os.getenv("DBUSER"),
-#        password=os.getenv("DBPASS"))
-#
-#
-# def connect_to_database():
-#    if platform.system() == "Linux":
-#        return get_linux_conn().cursor()
-#    return get_windows_conn().cursor()
 
 
 @app.route('/staked_cpb_snapshot/', methods=['GET'])
@@ -87,8 +64,8 @@ def staked_snapshot():
     return "<head>\n" \
            "<title>Staked CPB snapshot</title>\n" \
            "</head>\n" \
-           "<body>\n" \
-           "<button id=\"btn\" onclick=\"main()\">Make a snapshot of staked CPB</button>\n" \
+           "<body>\n" + \
+           css + "<button id=\"btn\" onclick=\"main()\">Make a snapshot of staked CPB</button>\n" \
            "<script>\n" \
            "const start_CMB = 1;\n" \
            "const end_CMB = 1000;\n" \
@@ -334,93 +311,47 @@ def save_staked_snapshot():
 
         return "Incorrect password"
     except Exception as e:
+        log('/save_staked_snapshot/incorrect_format')
         return 'Error occured: ' + str(e)
 
 
-@app.route('/save_snapshot/<string:password>/<string:date>/<string:time>/<string:cmb_staked>/<string:cgb_staked>/',
-           methods=['GET'])
-def save_snapshot(password, date, time, cmb_staked, cgb_staked):
-    global snapshot_at
-
-    log('/save_snapshot/' + password + '/' + date + '/' + time + '/' + cmb_staked + '/' + cgb_staked + '/')
-
-    if access_granted(password):
-        save_snapshot = False
-
-        f = open(get_file_route('staking_last.txt'), "r")
-        last_snap = f.readline()
-        if last_snap == '':
-            # logs.append('No snapshot made before')
-            save_snapshot = True
-        else:
-            # logs.append('Last snapshot: ' + last_snap)
-
-            last_timestamp_obj = datetime.strptime(last_snap.split(',')[0], '%Y-%m-%d %H:%M:%S')
-            # logs.append('Last snapshot timestamp:|' + str(last_timestamp_obj) + '|')
-
-            last_timestamp_reduced = last_timestamp_obj - snapshot_at
-            # logs.append('Last snapshot timestamp reduced:|' + str(last_timestamp_reduced) + '|')
-
-            last_snapshot_date = last_timestamp_reduced.date()
-            # logs.append('Last snapshot date:|' + str(last_snapshot_date) + '|')
-
-            new_snapshot_date = (datetime.strptime(date + ' ' + time, '%Y-%m-%d %H:%M:%S') - snapshot_at).date()
-            # logs.append('New snapshot date:|' + str(new_snapshot_date) + '|')
-
-            save_snapshot = new_snapshot_date > last_snapshot_date
-
-        f.close()
-
-        if save_snapshot:
-            f = open(get_file_route('staking.txt'), "a")
-            f.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
-            f.close()
-            f2 = open(get_file_route('staking_last.txt'), "w")
-            f2.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
-            f2.close()
-            return "Snapshot saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n"
-        else:
-            return "Snapshot not saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n"
-
-    return "Incorrect password"
-
-
-@app.route('/update_holder/<string:password>/<string:collection>/<string:id>/<string:wallet>/',
-           methods=['GET'])
-def update_holder(password, collection, id, wallet):
-    log('/update_holder/' + password + '/' + collection + '/' + id + '/' + wallet + '/')
+@app.route('/update_holders/', methods=['POST'])
+def update_holders():
 
     try:
-        int(id)
-    except Exception:
-        return debug_return("ID is not an integer")
+        data = request.get_json()
+        password = data['password']
+        new_holders = data['holders']
 
-    if access_granted(password):
-        with open(get_file_route('all_cpb.json')) as json_file:
-            holders = {}
-            try:
-                holders = json.load(json_file)
-                if collection in holders:
-                    holders[collection][id] = wallet
-                else:
-                    holders[collection] = {
-                        int(id): wallet
-                    }
+        log('/update_holders/' + password + '/holders={...}')
 
+        if access_granted(password):
+            with open(get_file_route('all_cpb.json')) as json_file:
+                holders = {}
+                try:
+                    holders = json.load(json_file)
+                except Exception:
+                    holders = {}
 
-            except Exception:
-                holders = {
-                    collection: {
-                        int(id): wallet
-                    }
-                }
+                # Update the holders
+                for collection in new_holders:
+                    if collection not in holders:
+                        holders[collection] = {}
 
-            # Save
-            with open(get_file_route('all_cpb.json'), 'w') as outfile:
-                outfile.write(json.dumps(holders))
+                    for nft_id in new_holders:
+                        if 'owner' in new_holders[collection][nft_id] and 'staked' in new_holders[collection][nft_id]:
+                            holders[collection][nft_id] = new_holders[collection][nft_id]
 
-        return "updating"
-    return "Incorrect password"
+                # Save
+                with open(get_file_route('all_cpb.json'), 'w') as outfile:
+                    outfile.write(json.dumps(holders))
+
+            return "Holders updated successfully"
+        return "Incorrect password"
+
+    except Exception as e:
+        log('/update_holders/incorrect_format')
+        return 'Error occured: ' + str(e)
 
 
 if __name__ == '__main__':
