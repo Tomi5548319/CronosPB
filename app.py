@@ -45,24 +45,6 @@ def index():
 
 @app.route('/staked_cpb_snapshot/', methods=['GET'])
 def staked_snapshot():
-    #    kurzor = connect_to_database()
-    #    kurzor.execute("SELECT VERSION();")
-    #    response_version = kurzor.fetchone()[0]
-    #
-    #    kurzor.execute("SELECT pg_database_size('dota2')/1024/1024 as dota2_db_size;")
-    #    response_db_size = kurzor.fetchone()[0]
-    #
-    #    moj_dic = {}
-    #    moj_vnoreny_dic = {}
-    #
-    #    moj_vnoreny_dic["version"] = response_version
-    #    moj_vnoreny_dic["dota2_db_size"] = response_db_size
-    #
-    #    moj_dic['pgsql'] = moj_vnoreny_dic
-    #
-    #    kurzor.close()
-    #
-    #    return json.dumps(moj_dic)
     return "<head>\n" \
            "<title>Staked CPB snapshot</title>\n" \
            "</head>\n" \
