@@ -40,7 +40,12 @@ def index():
            "}" \
            "</script>" \
            "<button onclick=\"changeURL('staked_cpb_snapshot/');\">Staked CPB Snapshot</button><br><br>" \
-           "<button onclick=\"changeURL('wallet_checker/0xF8E5a3916019BCdb8f598BBB5C9fDB9A81349C3f/');\">Wallet checker</button><br><br>"
+           "<button onclick=\"changeURL('wallet_checker/');\">Wallet checker</button><br><br>"
+
+
+@app.route('/staked_cpb_snapshot/view/', methods=['GET'])
+def staked_snapshot_view():
+    return 'TBD'
 
 
 @app.route('/staked_cpb_snapshot/', methods=['GET'])
@@ -50,14 +55,13 @@ def staked_snapshot():
            "</head>\n" \
            "<body>\n" + \
            css + "<button id=\"btn\" onclick=\"main()\">Make a snapshot of staked CPB</button>\n" \
+           "<button id=\"btn_view\" onclick=\"view_snapshots()\">View snapshots of staked CPB</button>\n" \
            "<script>\n" \
            "const start_CMB = 1;\n" \
            "const end_CMB = 1000;\n" \
            "const start_CGB = 1;\n" \
            "const end_CGB = 6100;\n" \
            "const fetch_limit = 5;\n" \
-           "</script>\n" \
-           "<script>\n" \
            "function main() {\n" \
            "	var button = document.getElementById('btn');\n" \
            "	button.disabled = true;\n" \
@@ -73,6 +77,9 @@ def staked_snapshot():
            "	}\n" \
            "	\n" \
            "}\n" \
+           "function view_snapshots(){" \
+           "window.location.href = window.location.href + 'view/'" \
+           "}" \
            "var total_CMB = end_CMB - start_CMB + 1;\n" \
            "var total_CGB = end_CGB - start_CGB + 1;\n" \
            "var max_count = total_CMB + total_CGB;\n" \
@@ -194,6 +201,11 @@ def staked_snapshot():
            "}\n" \
            "</script>\n" \
            "</body>"
+
+
+@app.route('/wallet_checker/', methods=['GET'])
+def wallet_check():
+
 
 
 @app.route('/wallet_checker/<string:wallet_address>/', methods=['GET'])
