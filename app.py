@@ -197,8 +197,27 @@ def staked_snapshot():
 
 
 @app.route('/wallet_checker/<string:wallet_address>/', methods=['GET'])
-def wallet_checker(wallet_address):
-    return "Wallet: " + wallet_address + " (TBD)"
+def wallet_checker(wallet_address: str):
+    try:
+        with open(get_file_route('all_cpb.json')) as json_file:
+            try:
+                holders = json.load(json_file)
+                counts = {'CMB': 0, 'CGB': 0}
+
+                for collection in holders:
+                    for nft_id in holders[collection]:
+                        if holders[collection][nft_id]['owner'] == wallet_address and collection in counts:
+                            counts[collection] += 1
+
+                return "Wallet: " + str(wallet_address) + '<br>' + \
+                    + 'CMBs: ' + str(counts['CMB']) + '<br>' + \
+                    + 'CGBs: ' + str(counts['CGB']) + '<br>'
+
+            except Exception:
+                return "Wallet: " + wallet_address + '<br>Error occured while searching for NFTs'
+
+    except Exception as e:
+        return "Wallet: " + wallet_address + '<br>---Error occured while searching for NFTs---<br>' + str(e)
 
 
 def access_granted(password: str) -> bool:
