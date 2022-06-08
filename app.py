@@ -45,7 +45,52 @@ def index():
 
 @app.route('/staked_cpb_snapshot/view/', methods=['GET'])
 def staked_snapshot_view():
-    return 'TBD'
+    try:
+        with open(get_file_route('staking.txt')) as all_staking_snapshots:
+            try:
+                snapshots = all_staking_snapshots.readlines()
+                ret = '<style>' \
+                      'table {' \
+                      '  font-family: Arial, Helvetica, sans-serif;' \
+                      '  border-collapse: collapse;' \
+                      '  width: 100%;' \
+                      '}' \
+                      'table td, table th {' \
+                      '  border: 1px solid #ddd;' \
+                      '  padding: 8px;' \
+                      '}' \
+                      'table tr:nth-child(even){background-color: #f2f2f2;}' \
+                      'table tr:hover {background-color: #ddd;}' \
+                      'table th {' \
+                      '  padding-top: 12px;' \
+                      '  padding-bottom: 12px;' \
+                      '  text-align: left;' \
+                      '  background-color: #66B1FF;' \
+                      '  color: white;' \
+                      '}' \
+                      '</style>'
+                ret += '<table><tr><th>Date</th><th>Time</th><th>CMB staked</th><th>CGB staked</th><th>$CPB earned from staking</th><th>$CPB to be minted</th></tr>'
+
+                for snapshot in snapshots:
+                    date = str(str(snapshot).split(' ')[0])
+                    time = str(str(snapshot).split(',')[0].split(' ')[1])
+                    CMB_staked = str(str(snapshot).split(',')[1])
+                    CGB_staked = str(str(snapshot).split(',')[2])
+                    cpb_earned_int = int(CMB_staked) * 30 + int(CGB_staked) * 8
+                    CPB_earned = str(cpb_earned_int) + ' $CPB'
+                    CPB_minted = str(cpb_earned_int/4) + ' $CPB'
+
+                    ret += '<tr><td>' + date + '</td><td>' + time + '</td><td>' + CMB_staked + '</td><td>' + CGB_staked + '</td><td>' + CPB_earned + '</td><td>' + CPB_minted + '</td></tr>'
+
+                ret += '</table>'
+
+                return ret
+
+            except Exception:
+                return 'Error occured while searching for snapshots'
+
+    except Exception as e:
+        return '---Error occured while searching for snapshots---<br>' + str(e)
 
 
 @app.route('/staked_cpb_snapshot/', methods=['GET'])
