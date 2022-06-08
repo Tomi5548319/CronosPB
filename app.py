@@ -224,15 +224,18 @@ def wallet_checker(wallet_address: str):
             try:
                 holders = json.load(json_file)
                 counts = {'CMB': 0, 'CGB': 0}
+                staked_counts = {'CMB': 0, 'CGB': 0}
 
                 for collection in holders:
                     for nft_id in holders[collection]:
-                        if str(holders[collection][nft_id]['owner']).lower() == str(wallet_address).lower() and collection in counts:
+                        if 'owner' in holders[collection][nft_id] and str(holders[collection][nft_id]['owner']).lower() == str(wallet_address).lower() and collection in counts:
                             counts[collection] += 1
+                            if 'staked' in holders[collection][nft_id] and holders[collection][nft_id]['staked'] and collection in staked_counts:
+                                staked_counts[collection] += 1
 
-                return "Wallet: " + str(wallet_address) + '<br>' + \
-                    + 'CMBs: ' + str(counts['CMB']) + '<br>' + \
-                    + 'CGBs: ' + str(counts['CGB']) + '<br>'
+                return "Wallet: " + str(wallet_address) + '<br><br>' \
+                       + 'All CMBs: ' + str(counts['CMB']) + ' (' + str(staked_counts['CMB']) + ' staked)' + '<br>' \
+                       + 'All CGBs: ' + str(counts['CGB']) + ' (' + str(staked_counts['CGB']) + ' staked)' + '<br>'
 
             except Exception:
                 return "Wallet: " + wallet_address + '<br>Error occured while searching for NFTs'
