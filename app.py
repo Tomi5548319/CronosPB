@@ -72,13 +72,16 @@ def staked_snapshot_view():
                 ret += '<table><tr><th>Date</th><th>Time</th><th>CMB staked</th><th>CGB staked</th><th>$CPB earned from staking</th><th>$CPB to be minted</th></tr>'
 
                 for snapshot in snapshots:
-                    date = str(str(snapshot).split(' ')[0])
-                    time = str(str(snapshot).split(',')[0].split(' ')[1])
+                    timestamp = str(str(snapshot).split(',')[0])
+                    timestamp = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
+                    date = str(timestamp.strftime("%d. %b. %Y"))
+                    time = str(timestamp.strftime("%H:%M"))
+
                     CMB_staked = str(str(snapshot).split(',')[1])
                     CGB_staked = str(str(snapshot).split(',')[2])
-                    cpb_earned_int = int(CMB_staked) * 30 + int(CGB_staked) * 8
-                    CPB_earned = str(cpb_earned_int) + ' $CPB'
-                    CPB_minted = str(cpb_earned_int/4) + ' $CPB'
+                    CPB_earned_int = int(CMB_staked) * 30 + int(CGB_staked) * 8
+                    CPB_earned = str(CPB_earned_int) + ' $CPB'
+                    CPB_minted = str(CPB_earned_int/4) + ' $CPB'
 
                     ret += '<tr><td>' + date + '</td><td>' + time + '</td><td>' + CMB_staked + '</td><td>' + CGB_staked + '</td><td>' + CPB_earned + '</td><td>' + CPB_minted + '</td></tr>'
 
