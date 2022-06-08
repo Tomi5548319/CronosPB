@@ -260,7 +260,9 @@ def wallet_check():
         '<script>' \
         '	function check_wallet(){' \
         '	var wallet_address = document.getElementById(\'wallet_address\').value;' \
-        '	window.location.href = window.location.href + wallet_address + \'/\';' \
+        '   if(wallet_address != ""){' \
+        '	    window.location.href = window.location.href + wallet_address + \'/\';' \
+        '   }' \
         '	}' \
         '</script>'
 
