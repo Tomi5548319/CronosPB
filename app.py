@@ -313,11 +313,11 @@ def wallet_checker(wallet_address: str):
                                + 'All CMBs: ' + str(counts['CMB']) + ' (' + str(staked_counts['CMB']) + ' staked)' + '<br>' \
                                + 'All CGBs: ' + str(counts['CGB']) + ' (' + str(staked_counts['CGB']) + ' staked)' + '<br>'
 
-            except Exception:
-                return "Wallet: " + wallet_address + '<br>Error occured while searching for NFTs'
+            except Exception as e:
+                return "Wallet: " + wallet_address + '<br>---Error 1 occured while searching for NFTs---<br>' + str(e)
 
     except Exception as e:
-        return "Wallet: " + wallet_address + '<br>---Error occured while searching for NFTs---<br>' + str(e)
+        return "Wallet: " + wallet_address + '<br>---Error 2 occured while searching for NFTs---<br>' + str(e)
 
 
 def access_granted(password: str) -> bool:
