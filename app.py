@@ -31,6 +31,27 @@ css = "<style>" \
            "}" \
            "</style>"
 
+table_css = '<style>' \
+            'table {' \
+            '  font-family: Arial, Helvetica, sans-serif;' \
+            '  border-collapse: collapse;' \
+            '  width: 100%;' \
+            '}' \
+            'table td, table th {' \
+            '  border: 1px solid #ddd;' \
+            '  padding: 8px;' \
+            '}' \
+            'table tr:nth-child(even){background-color: #f2f2f2;}' \
+            'table tr:hover {background-color: #ddd;}' \
+            'table th {' \
+            '  padding-top: 12px;' \
+            '  padding-bottom: 12px;' \
+            '  text-align: left;' \
+            '  background-color: #66B1FF;' \
+            '  color: white;' \
+            '}' \
+            '</style>'
+
 
 @app.route('/')
 def index():
@@ -49,27 +70,7 @@ def staked_snapshot_view():
         with open(get_file_route('staking.txt')) as all_staking_snapshots:
             try:
                 snapshots = all_staking_snapshots.readlines()
-                ret = '<style>' \
-                      'table {' \
-                      '  font-family: Arial, Helvetica, sans-serif;' \
-                      '  border-collapse: collapse;' \
-                      '  width: 100%;' \
-                      '}' \
-                      'table td, table th {' \
-                      '  border: 1px solid #ddd;' \
-                      '  padding: 8px;' \
-                      '}' \
-                      'table tr:nth-child(even){background-color: #f2f2f2;}' \
-                      'table tr:hover {background-color: #ddd;}' \
-                      'table th {' \
-                      '  padding-top: 12px;' \
-                      '  padding-bottom: 12px;' \
-                      '  text-align: left;' \
-                      '  background-color: #66B1FF;' \
-                      '  color: white;' \
-                      '}' \
-                      '</style>'
-                ret += '<table><tr><th>Date</th><th>Time</th><th>CMB staked</th><th>CGB staked</th><th>$CPB earned from staking</th><th>$CPB to be minted</th></tr>'
+                ret = table_css + '<table><tr><th>Date</th><th>Time (UTC)</th><th>CMB staked (old)</th><th>CGB staked (old)</th><th>CMB staked (new)</th><th>CGB staked (new)</th><th>$CPB earned from staking</th><th>$CPB to be minted</th></tr>'
 
                 for snapshot in snapshots:
                     timestamp = str(str(snapshot).split(',')[0])
@@ -77,13 +78,20 @@ def staked_snapshot_view():
                     date = str(timestamp.strftime("%d. %b. %Y"))
                     time = str(timestamp.strftime("%H:%M"))
 
-                    CMB_staked = str(str(snapshot).split(',')[1])
-                    CGB_staked = str(str(snapshot).split(',')[2])
-                    CPB_earned_int = int(CMB_staked) * 30 + int(CGB_staked) * 8
+                    CMB_staked_old = str(str(snapshot).split(',')[1])
+                    CGB_staked_old = str(str(snapshot).split(',')[2])
+                    try:
+                        CMB_staked_new = str(str(snapshot).split(',')[3])
+                        CGB_staked_new = str(str(snapshot).split(',')[4])
+                    except Exception:
+                        CMB_staked_new = str(0)
+                        CGB_staked_new = str(0)
+
+                    CPB_earned_int = (int(CMB_staked_old) + int(CMB_staked_new)) * 30 + (int(CGB_staked_old) + int(CGB_staked_new)) * 8
                     CPB_earned = str(CPB_earned_int) + ' $CPB'
                     CPB_minted = str(CPB_earned_int/4) + ' $CPB'
 
-                    ret += '<tr><td>' + date + '</td><td>' + time + '</td><td>' + CMB_staked + '</td><td>' + CGB_staked + '</td><td>' + CPB_earned + '</td><td>' + CPB_minted + '</td></tr>'
+                    ret += '<tr><td>' + date + '</td><td>' + time + '</td><td>' + CMB_staked_old + '</td><td>' + CGB_staked_old + '</td><td>' + CMB_staked_new + '</td><td>' + CGB_staked_new + '</td><td>' + CPB_earned + '</td><td>' + CPB_minted + '</td></tr>'
 
                 ret += '</table>'
 
@@ -96,6 +104,7 @@ def staked_snapshot_view():
         return '---Error occured while searching for snapshots---<br>' + str(e)
 
 
+# TODO update
 @app.route('/staked_cpb_snapshot/', methods=['GET'])
 def staked_snapshot():
     return "<head>\n" \
@@ -274,18 +283,35 @@ def wallet_checker(wallet_address: str):
             try:
                 holders = json.load(json_file)
                 counts = {'CMB': 0, 'CGB': 0}
-                staked_counts = {'CMB': 0, 'CGB': 0}
+                staked_counts = {'old':{'CMB': 0, 'CGB': 0},
+                                 'new':{'CMB': 0, 'CGB': 0}}
 
                 for collection in holders:
                     for nft_id in holders[collection]:
                         if 'owner' in holders[collection][nft_id] and str(holders[collection][nft_id]['owner']).lower() == str(wallet_address).lower() and collection in counts:
                             counts[collection] += 1
-                            if 'staked' in holders[collection][nft_id] and holders[collection][nft_id]['staked'] and collection in staked_counts:
-                                staked_counts[collection] += 1
+                            if 'staked' in holders[collection][nft_id]:
+                                if not holders[collection][nft_id]['staked']:
+                                    continue
+                                elif holders[collection][nft_id]['staked'] == 'new':
+                                    staked_counts['new'][collection] += 1
+                                else:
+                                    staked_counts['old'][collection] += 1
 
-                return "Wallet: " + str(wallet_address) + '<br><br>' \
-                       + 'All CMBs: ' + str(counts['CMB']) + ' (' + str(staked_counts['CMB']) + ' staked)' + '<br>' \
-                       + 'All CGBs: ' + str(counts['CGB']) + ' (' + str(staked_counts['CGB']) + ' staked)' + '<br>'
+                with open(get_file_route('staking_last.txt'), "r") as f:
+                    last_snap = f.readline()
+                    if last_snap:
+                        last_timestamp = datetime.strptime(last_snap.split(',')[0], '%Y-%m-%d %H:%M:%S')
+                        now = datetime.strptime(urlopen('http://just-the-time.appspot.com/').read().strip().decode('utf-8'), '%Y-%m-%d %H:%M:%S')
+
+                        time_passed = now-last_timestamp
+
+                        return "Wallet: " + str(wallet_address) + '(last updated ' + str(time_passed.days) + 'days ' + str(math.floor(time_passed.seconds / 3600)) + 'h ' + str(math.floor(time_passed.seconds / 60) % 60) + 'min ago)<br><br>' \
+                               + table_css + '<table><tr><th>Collection</th><th>Available</th><th>Staked (old)</th><th>Staked (new)</th><th>Total</th></tr>' \
+                               + '<tr><td>CMB</td><td>' + str(counts['CMB'] - staked_counts['old']['CMB'] - staked_counts['new']['CMB']) + '</td><td>' + str(staked_counts['old']['CMB']) + '</td><td>' + str(staked_counts['new']['CMB']) + '</td><td>' + str(counts['CMB']) + '</td></tr>' \
+                               + '<tr><td>CGB</td><td>' + str(counts['CGB'] - staked_counts['old']['CGB'] - staked_counts['new']['CGB']) + '</td><td>' + str(staked_counts['old']['CGB']) + '</td><td>' + str(staked_counts['new']['CGB']) + '</td><td>' + str(counts['CGB']) + '</td></tr>' \
+                               + 'All CMBs: ' + str(counts['CMB']) + ' (' + str(staked_counts['CMB']) + ' staked)' + '<br>' \
+                               + 'All CGBs: ' + str(counts['CGB']) + ' (' + str(staked_counts['CGB']) + ' staked)' + '<br>'
 
             except Exception:
                 return "Wallet: " + wallet_address + '<br>Error occured while searching for NFTs'
@@ -343,10 +369,12 @@ def save_staked_snapshot():
         password = data['password']
         date = data['date']
         time = data['time']
-        cmb_staked = data['cmb_staked']
-        cgb_staked = data['cgb_staked']
+        cmb_staked_old = data['cmb_staked_old']
+        cgb_staked_old = data['cgb_staked_old']
+        cmb_staked_new = data['cmb_staked_new']
+        cgb_staked_new = data['cgb_staked_new']
 
-        log('/save_staked_snapshot/' + password + '/' + date + '/' + time + '/' + cmb_staked + '/' + cgb_staked + '/')
+        log('/save_staked_snapshot/' + password + '/' + date + '/' + time + '/' + cmb_staked_old + '/' + cgb_staked_old + '/' + cmb_staked_new + '/' + cgb_staked_new + '/')
 
         if access_granted(password):
             save_snapshot = False
@@ -377,14 +405,14 @@ def save_staked_snapshot():
 
             if save_snapshot:
                 f = open(get_file_route('staking.txt'), "a")
-                f.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+                f.write(date + " " + time + "," + cmb_staked_old + "," + cgb_staked_old + "," + cmb_staked_new + "," + cgb_staked_new + "\n")
                 f.close()
                 f2 = open(get_file_route('staking_last.txt'), "w")
-                f2.write(date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n")
+                f2.write(date + " " + time + "," + cmb_staked_old + "," + cgb_staked_old + "," + cmb_staked_new + "," + cgb_staked_new + "\n")
                 f2.close()
-                return "Snapshot saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n"
+                return "Snapshot saved | " + date + " " + time + "," + cmb_staked_old + "," + cgb_staked_old + "," + cmb_staked_new + "," + cgb_staked_new + "\n"
             else:
-                return "Snapshot not saved | " + date + " " + time + "," + cmb_staked + "," + cgb_staked + "\n"
+                return "Snapshot not saved | " + date + " " + time + "," + cmb_staked_old + "," + cgb_staked_old + "," + cmb_staked_new + "," + cgb_staked_new + "\n"
 
         return "Incorrect password"
     except Exception as e:
