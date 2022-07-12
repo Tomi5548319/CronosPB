@@ -365,13 +365,13 @@ def save_staked_snapshot():
 
     try:
         data = request.get_json()
-        password = data['password']
-        date = data['date']
-        time = data['time']
-        cmb_staked_old = data['cmb_staked_old']
-        cgb_staked_old = data['cgb_staked_old']
-        cmb_staked_new = data['cmb_staked_new']
-        cgb_staked_new = data['cgb_staked_new']
+        password = str(data['password'])
+        date = str(data['date'])
+        time = str(data['time'])
+        cmb_staked_old = str(data['cmb_staked_old'])
+        cgb_staked_old = str(data['cgb_staked_old'])
+        cmb_staked_new = str(data['cmb_staked_new'])
+        cgb_staked_new = str(data['cgb_staked_new'])
 
         log('/save_staked_snapshot/' + password + '/' + date + '/' + time + '/' + cmb_staked_old + '/' + cgb_staked_old + '/' + cmb_staked_new + '/' + cgb_staked_new + '/')
 
