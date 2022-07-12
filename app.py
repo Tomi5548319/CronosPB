@@ -310,9 +310,7 @@ def wallet_checker(wallet_address: str):
                         return "Wallet: " + str(wallet_address) + '(last updated ' + str(time_passed.days) + 'days ' + str(math.floor(time_passed.seconds / 3600)) + 'h ' + str(math.floor(time_passed.seconds / 60) % 60) + 'min ago)<br><br>' \
                                + table_css + '<table><tr><th>Collection</th><th>Available</th><th>Staked (old)</th><th>Staked (new)</th><th>Total</th></tr>' \
                                + '<tr><td>CMB</td><td>' + str(counts['CMB'] - staked_counts['old']['CMB'] - staked_counts['new']['CMB']) + '</td><td>' + str(staked_counts['old']['CMB']) + '</td><td>' + str(staked_counts['new']['CMB']) + '</td><td>' + str(counts['CMB']) + '</td></tr>' \
-                               + '<tr><td>CGB</td><td>' + str(counts['CGB'] - staked_counts['old']['CGB'] - staked_counts['new']['CGB']) + '</td><td>' + str(staked_counts['old']['CGB']) + '</td><td>' + str(staked_counts['new']['CGB']) + '</td><td>' + str(counts['CGB']) + '</td></tr>' \
-                               + 'All CMBs: ' + str(counts['CMB']) + ' (' + str(staked_counts['CMB']) + ' staked)' + '<br>' \
-                               + 'All CGBs: ' + str(counts['CGB']) + ' (' + str(staked_counts['CGB']) + ' staked)' + '<br>'
+                               + '<tr><td>CGB</td><td>' + str(counts['CGB'] - staked_counts['old']['CGB'] - staked_counts['new']['CGB']) + '</td><td>' + str(staked_counts['old']['CGB']) + '</td><td>' + str(staked_counts['new']['CGB']) + '</td><td>' + str(counts['CGB']) + '</td></tr></table>'
 
             except Exception as e:
                 return "Wallet: " + wallet_address + '<br>---Error 1 occured while searching for NFTs---<br>' + str(e)
