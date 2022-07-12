@@ -378,37 +378,34 @@ def save_staked_snapshot():
         if access_granted(password):
             save_snapshot = False
 
-            f = open(get_file_route('staking_last.txt'), "r")
-            last_snap = f.readline()
-            if last_snap == '':
-                # logs.append('No snapshot made before')
-                save_snapshot = True
-            else:
-                # logs.append('Last snapshot: ' + last_snap)
+            with open(get_file_route('staking_last.txt'), "r") as f:
+                last_snap = f.readline()
+                if last_snap == '':
+                    # logs.append('No snapshot made before')
+                    save_snapshot = True
+                else:
+                    # logs.append('Last snapshot: ' + last_snap)
 
-                last_timestamp_obj = datetime.strptime(last_snap.split(',')[0], '%Y-%m-%d %H:%M:%S')
-                # logs.append('Last snapshot timestamp:|' + str(last_timestamp_obj) + '|')
+                    last_timestamp_obj = datetime.strptime(last_snap.split(',')[0], '%Y-%m-%d %H:%M:%S')
+                    # logs.append('Last snapshot timestamp:|' + str(last_timestamp_obj) + '|')
 
-                last_timestamp_reduced = last_timestamp_obj - snapshot_at
-                # logs.append('Last snapshot timestamp reduced:|' + str(last_timestamp_reduced) + '|')
+                    last_timestamp_reduced = last_timestamp_obj - snapshot_at
+                    # logs.append('Last snapshot timestamp reduced:|' + str(last_timestamp_reduced) + '|')
 
-                last_snapshot_date = last_timestamp_reduced.date()
-                # logs.append('Last snapshot date:|' + str(last_snapshot_date) + '|')
+                    last_snapshot_date = last_timestamp_reduced.date()
+                    # logs.append('Last snapshot date:|' + str(last_snapshot_date) + '|')
 
-                new_snapshot_date = (datetime.strptime(date + ' ' + time, '%Y-%m-%d %H:%M:%S') - snapshot_at).date()
-                # logs.append('New snapshot date:|' + str(new_snapshot_date) + '|')
+                    new_snapshot_date = (datetime.strptime(date + ' ' + time, '%Y-%m-%d %H:%M:%S') - snapshot_at).date()
+                    # logs.append('New snapshot date:|' + str(new_snapshot_date) + '|')
 
-                save_snapshot = new_snapshot_date > last_snapshot_date
+                    save_snapshot = new_snapshot_date > last_snapshot_date
 
-            f.close()
+            with open(get_file_route('staking_last.txt'), "w") as f:
+                f.write(date + " " + time + "," + cmb_staked_old + "," + cgb_staked_old + "," + cmb_staked_new + "," + cgb_staked_new + "\n")
 
             if save_snapshot:
-                f = open(get_file_route('staking.txt'), "a")
-                f.write(date + " " + time + "," + cmb_staked_old + "," + cgb_staked_old + "," + cmb_staked_new + "," + cgb_staked_new + "\n")
-                f.close()
-                f2 = open(get_file_route('staking_last.txt'), "w")
-                f2.write(date + " " + time + "," + cmb_staked_old + "," + cgb_staked_old + "," + cmb_staked_new + "," + cgb_staked_new + "\n")
-                f2.close()
+                with open(get_file_route('staking.txt'), "a") as f:
+                    f.write(date + " " + time + "," + cmb_staked_old + "," + cgb_staked_old + "," + cmb_staked_new + "," + cgb_staked_new + "\n")
                 return "Snapshot saved | " + date + " " + time + "," + cmb_staked_old + "," + cgb_staked_old + "," + cmb_staked_new + "," + cgb_staked_new + "\n"
             else:
                 return "Snapshot not saved | " + date + " " + time + "," + cmb_staked_old + "," + cgb_staked_old + "," + cmb_staked_new + "," + cgb_staked_new + "\n"
