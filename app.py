@@ -341,6 +341,13 @@ def wallet_checker(wallet_address: str):
         return "Wallet: " + wallet_address + '<br>---Error 2 occured while searching for NFTs---<br>' + str(e)
 
 
+def get_safe_url(endpoint: str):
+    url = url_for(endpoint, _external=True)
+    if url.startswith('http:'):
+        return 'https:' + url[5:]
+    return url
+
+
 @app.route('/snapshot_maker/', methods=['GET'])
 def snapshot_maker():
     return table_css + css + '<h1>Snapshot maker</h1>' \
@@ -369,8 +376,7 @@ def snapshot_maker():
                              '	    var available = document.getElementById(\'avlbl\').checked;' \
                              '	    var staked_old = document.getElementById(\'staked_old\').checked;' \
                              '	    var staked_new = document.getElementById(\'staked_new\').checked;' \
-                             '      post("' + url_for('make_snapshot',
-                                                      _external=True) + '", {"table_view": table_view, "min_cmb": min_cmb, "min_cgb": min_cgb, "available": available, "staked_old": staked_old, "staked_new": staked_new}).then(res => {' \
+                             '      post("' + get_safe_url('make_snapshot') + '", {"table_view": table_view, "min_cmb": min_cmb, "min_cgb": min_cgb, "available": available, "staked_old": staked_old, "staked_new": staked_new}).then(res => {' \
                                                                         '          res.text().then(function(text) {' \
                                                                         'document.getElementById(\'snapshot_result\').innerHTML = text;' \
                                                                         '});' \
