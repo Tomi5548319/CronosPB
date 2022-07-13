@@ -6,7 +6,6 @@ from datetime import datetime
 from datetime import timedelta
 import json
 import math
-import traceback2 as traceback
 
 from flask import Flask, render_template, request, redirect, url_for
 
@@ -280,6 +279,25 @@ def wallet_check():
                  '</script>'
 
 
+def get_last_update() -> str:
+    try:
+        with open(get_file_route('staking_last.txt'), "r") as f:
+            last_snap = f.readline()
+            if last_snap:
+                last_timestamp = datetime.strptime(last_snap.split(',')[0], '%Y-%m-%d %H:%M:%S')
+                now = datetime.strptime(
+                    urlopen('http://just-the-time.appspot.com/').read().strip().decode('utf-8'),
+                    '%Y-%m-%d %H:%M:%S')
+
+                time_passed = now - last_timestamp
+
+                return str(time_passed.days) + 'days ' + str(math.floor(time_passed.seconds / 3600)) + 'h ' + str(
+                    math.floor(time_passed.seconds / 60) % 60) + 'min'
+    except:
+        return "---"
+    return "---"
+
+
 @app.route('/wallet_checker/<string:wallet_address>/', methods=['GET'])
 def wallet_checker(wallet_address: str):
     try:
@@ -294,7 +312,7 @@ def wallet_checker(wallet_address: str):
                     for nft_id in holders[collection]:
                         if 'owner' in holders[collection][nft_id] and str(
                                 holders[collection][nft_id]['owner']).lower() == str(
-                            wallet_address).lower() and collection in counts:
+                                wallet_address).lower() and collection in counts:
                             counts[collection] += 1
                             if 'staked' in holders[collection][nft_id]:
                                 if not holders[collection][nft_id]['staked']:
@@ -304,31 +322,19 @@ def wallet_checker(wallet_address: str):
                                 else:
                                     staked_counts['old'][collection] += 1
 
-                with open(get_file_route('staking_last.txt'), "r") as f:
-                    last_snap = f.readline()
-                    if last_snap:
-                        last_timestamp = datetime.strptime(last_snap.split(',')[0], '%Y-%m-%d %H:%M:%S')
-                        now = datetime.strptime(
-                            urlopen('http://just-the-time.appspot.com/').read().strip().decode('utf-8'),
-                            '%Y-%m-%d %H:%M:%S')
-
-                        time_passed = now - last_timestamp
-
-                        return "Wallet: <b>" + str(wallet_address) + '</b><br>(last update ' + str(
-                            time_passed.days) + 'days ' + str(math.floor(time_passed.seconds / 3600)) + 'h ' + str(
-                            math.floor(time_passed.seconds / 60) % 60) + 'min ago)<br><br>' \
-                               + table_css + '<table><tr><th>Collection</th><th>Available</th><th>Staked (old)</th><th>Staked (new)</th><th>Total</th></tr>' \
-                               + '<tr><td>CMB</td><td>' + str(
-                            counts['CMB'] - staked_counts['old']['CMB'] - staked_counts['new'][
-                                'CMB']) + '</td><td>' + str(staked_counts['old']['CMB']) + '</td><td>' + str(
-                            staked_counts['new']['CMB']) + '</td><td>' + str(counts['CMB']) + '</td></tr>' \
-                               + '<tr><td>CGB</td><td>' + str(
-                            counts['CGB'] - staked_counts['old']['CGB'] - staked_counts['new'][
-                                'CGB']) + '</td><td>' + str(staked_counts['old']['CGB']) + '</td><td>' + str(
-                            staked_counts['new']['CGB']) + '</td><td>' + str(counts['CGB']) + '</td></tr></table>'
+                return "Wallet: <b>" + str(
+                    wallet_address) + '</b><br>(last update ' + get_last_update() + ' ago)<br><br>' \
+                       + table_css + '<table><tr><th>Collection</th><th>Available</th><th>Staked (old)</th><th>Staked (new)</th><th>Total</th></tr>' \
+                       + '<tr><td>CMB</td><td>' + str(
+                    counts['CMB'] - staked_counts['old']['CMB'] - staked_counts['new'][
+                        'CMB']) + '</td><td>' + str(staked_counts['old']['CMB']) + '</td><td>' + str(
+                    staked_counts['new']['CMB']) + '</td><td>' + str(counts['CMB']) + '</td></tr>' \
+                       + '<tr><td>CGB</td><td>' + str(
+                    counts['CGB'] - staked_counts['old']['CGB'] - staked_counts['new'][
+                        'CGB']) + '</td><td>' + str(staked_counts['old']['CGB']) + '</td><td>' + str(
+                    staked_counts['new']['CGB']) + '</td><td>' + str(counts['CGB']) + '</td></tr></table>'
 
             except Exception as e:
-                traceback.print_exc()
                 return "Wallet: " + wallet_address + '<br>---Error 1 occured while searching for NFTs---<br>' + str(e)
 
     except Exception as e:
@@ -451,8 +457,9 @@ def make_snapshot():
                         elif owner in eligible_owners:
                             eligible_owners.pop(owner)
 
+            # TODO add time of last update of holders
             if table_view == 'table':
-                ret = '<h2>Eligible wallets</h2><table><tr><th>Wallet</th><th>Available CMB</th><th>Staked (old) CMB</th><th>Staked (new) CMB</th><th>Eligible CMB</th><th>Available CGB</th><th>Staked (old) CGB</th><th>Staked (new) CGB</th><th>Eligible CGB</th></tr>'
+                ret = '<h2>Eligible wallets (last update ' + get_last_update() + ' ago)</h2><table><tr><th>Wallet</th><th>Available CMB</th><th>Staked (old) CMB</th><th>Staked (new) CMB</th><th>Eligible CMB</th><th>Available CGB</th><th>Staked (old) CGB</th><th>Staked (new) CGB</th><th>Eligible CGB</th></tr>'
 
                 for owner in eligible_owners:
                     ret += '<tr><td>' + str(owner) + '</td>'
@@ -475,13 +482,12 @@ def make_snapshot():
                 ret += '</table>'
                 return ret
             elif table_view == 'list':
-                return '<h2>Eligible wallets</h2>' + str(list(eligible_owners.keys()))
+                return '<h2>Eligible wallets (last update ' + get_last_update() + ' ago)</h2>' + str(list(eligible_owners.keys()))
             elif table_view == 'dictionary':
-                return '<h2>Eligible wallets</h2>' + str(eligible_owners)
+                return '<h2>Eligible wallets (last update ' + get_last_update() + ' ago)</h2>' + str(eligible_owners)
 
         except Exception as e:
             print(str(e))
-            traceback.print_exc()
 
     return 'An error occured, please contact the developer (maCRO)'
 
