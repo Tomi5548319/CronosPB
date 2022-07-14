@@ -443,6 +443,8 @@ def make_snapshot():
                     if staked_new:
                         owners[collection][owner]['total_eligible'] += owners[collection][owner]['staked_new']
 
+            print(owners)
+
             # 4. Save only wallets with x+ CMB and x+ CGB
             eligible_owners = {}
             for collection in owners:
@@ -462,6 +464,8 @@ def make_snapshot():
                             eligible_owners[owner][collection] = owners[collection][owner]
                         elif owner in eligible_owners:
                             eligible_owners.pop(owner)
+
+            print(eligible_owners)
 
             # TODO add time of last update of holders
             if table_view == 'table':
@@ -496,6 +500,16 @@ def make_snapshot():
             print(str(e))
 
     return 'An error occured, please contact the developer (maCRO)'
+
+
+@app.route('/get_holders/', methods=['GET'])
+def get_holders():
+    with open(get_file_route('all_cpb.json'), "r") as json_file:
+        try:
+            holders = json.load(json_file)
+            return str(holders)
+        except:
+            return '{}'
 
 
 def access_granted(password: str) -> bool:
