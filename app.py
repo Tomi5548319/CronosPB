@@ -443,29 +443,61 @@ def make_snapshot():
                     if staked_new:
                         owners[collection][owner]['total_eligible'] += owners[collection][owner]['staked_new']
 
-            print(owners)
+            # print(owners)
 
-            # 4. Save only wallets with x+ CMB and x+ CGB
+            # 4. Save all owners
             eligible_owners = {}
-            for collection in owners:
+            for collection in owners:  # ['CMB', 'CGB']
                 for owner in owners[collection]:
-                    if collection == 'CMB':
-                        if min_cmb <= 0 or owners[collection][owner]['total_eligible'] >= min_cmb:
-                            if owner not in eligible_owners:
-                                eligible_owners[owner] = {}
-                            eligible_owners[owner][collection] = owners[collection][owner]
-                        elif owner in eligible_owners:
-                            eligible_owners.pop(owner)
+                    if owner not in eligible_owners:
+                        eligible_owners[owner] = {}
+                    eligible_owners[owner][collection] = owners[collection][owner]
 
-                    elif collection == 'CGB':
-                        if min_cgb <= 0 or owners[collection][owner]['total_eligible'] >= min_cgb:
-                            if owner not in eligible_owners:
-                                eligible_owners[owner] = {}
-                            eligible_owners[owner][collection] = owners[collection][owner]
-                        elif owner in eligible_owners:
-                            eligible_owners.pop(owner)
+            # 5. Add CMB or CGB collection to eligible wallets missing this key
 
-            print(eligible_owners)
+            for owner in eligible_owners:
+                if 'CMB' not in eligible_owners[owner]:
+                    eligible_owners[owner]['CMB'] = {
+                            'available': 0,
+                            'staked_old': 0,
+                            'staked_new': 0,
+                            'total_eligible': 0
+                        }
+                if 'CGB' not in eligible_owners[owner]:
+                    eligible_owners[owner]['CGB'] = {
+                            'available': 0,
+                            'staked_old': 0,
+                            'staked_new': 0,
+                            'total_eligible': 0
+                        }
+
+                # 6. Remove wallets with not enough CMB or CGB
+                for collection in eligible_owners[owner]:
+                    if collection == 'CMB' and eligible_owners[owner][collection]['total_eligible'] < min_cmb:
+                        eligible_owners.pop(owner)
+                        break
+                    if collection == 'CGB' and eligible_owners[owner][collection]['total_eligible'] < min_cgb:
+                        eligible_owners.pop(owner)
+                        break
+
+
+                    # if collection == 'CMB':
+                    #     if min_cmb <= 0 or owners[collection][owner]['total_eligible'] >= min_cmb:
+                    #         if owner not in eligible_owners:
+                    #             eligible_owners[owner] = {}
+                    #         eligible_owners[owner][collection] = owners[collection][owner]
+                    #     elif owner in eligible_owners:
+                    #         eligible_owners.pop(owner)
+                    #
+                    # elif collection == 'CGB':
+                    #     if min_cgb <= 0 or owners[collection][owner]['total_eligible'] >= min_cgb:
+                    #         if owner not in eligible_owners:
+                    #             eligible_owners[owner] = {}
+                    #         eligible_owners[owner][collection] = owners[collection][owner]
+                    #     elif owner in eligible_owners:
+                    #         eligible_owners.pop(owner)
+
+            # print(eligible_owners)
 
             # TODO add time of last update of holders
             if table_view == 'table':
