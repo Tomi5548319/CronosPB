@@ -454,8 +454,9 @@ def make_snapshot():
                     eligible_owners[owner][collection] = owners[collection][owner]
 
             # 5. Add CMB or CGB collection to eligible wallets missing this key
-
+            eligible_copy = {}
             for owner in eligible_owners:
+                eligible_copy[owner] = eligible_owners[owner]
                 if 'CMB' not in eligible_owners[owner]:
                     eligible_owners[owner]['CMB'] = {
                             'available': 0,
@@ -474,10 +475,10 @@ def make_snapshot():
                 # 6. Remove wallets with not enough CMB or CGB
                 for collection in eligible_owners[owner]:
                     if collection == 'CMB' and eligible_owners[owner][collection]['total_eligible'] < min_cmb:
-                        eligible_owners.pop(owner)
+                        eligible_copy.pop(owner)
                         break
                     if collection == 'CGB' and eligible_owners[owner][collection]['total_eligible'] < min_cgb:
-                        eligible_owners.pop(owner)
+                        eligible_copy.pop(owner)
                         break
 
 
@@ -497,6 +498,7 @@ def make_snapshot():
                     #     elif owner in eligible_owners:
                     #         eligible_owners.pop(owner)
 
+            eligible_owners = eligible_copy
             # print(eligible_owners)
 
             # TODO add time of last update of holders
